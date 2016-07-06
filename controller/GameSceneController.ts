@@ -1,4 +1,4 @@
-class GameSceneController extends egret.EventDispatcher {
+class GameSceneController extends SceneController{ 
 	private frameTimer: egret.Timer;
 
 	private dragCon: DragController;
@@ -38,7 +38,8 @@ class GameSceneController extends egret.EventDispatcher {
 		this.scene.useTime_lb.text = '所用时间：' + this.cnt + '秒';
 	}
 
-	public init(): void {
+	public init(data?:any):void{
+	
 		this.initScene();
 
 		this.initPlane();
@@ -279,6 +280,6 @@ class GameSceneController extends egret.EventDispatcher {
 
 		this.cnt = 0;
 
-        SceneManager.inst.enterScene('end');
+        SceneManager.inst.enterScene('end', {time:this.cnt});
 	}
 }

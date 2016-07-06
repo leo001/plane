@@ -15,7 +15,7 @@ class SceneManager
 
     private con:any;
 
-    public enterScene(sn:string):void{
+    public enterScene(sn:string, data?:any):void{
         if('start' == sn){
             if(!this.startCon){            
                 this.startCon = new StartSceneController();
@@ -24,8 +24,6 @@ class SceneManager
         }else if('game' == sn){
             if(!this.gameCon){                
                 this.gameCon = new GameSceneController();
-            }else{
-                this.gameCon.init();
             }
             this.con = this.gameCon;        
         }else if('end' == sn){
@@ -34,7 +32,7 @@ class SceneManager
             }
             this.con = this.endCon;    
         }
-
+        this.con.init(data);
         Lyrs.inst.SCENE.removeChildren();
         Lyrs.inst.SCENE.addChild(this.con.scene);
     }
