@@ -27,25 +27,33 @@
 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-class LoadingUI extends egret.Sprite {
+class LoadingUI extends eui.Component {
 
     public constructor() {
         super();
-        this.createView();
+        this.skinName = customSkins.LoadingUISkin;
+    }
+    public ani_gr: eui.Group;
+    public mc:egret.MovieClip;
+
+    public childrenCreated(): void {
+
+        var data = RES.getRes("jiazai_json");
+        var txtr = RES.getRes("jiazai_png");
+        var factory = new egret.MovieClipDataFactory(data, txtr);
+        this.mc = new egret.MovieClip(factory.generateMovieClipData('jiazai'));
+        this.ani_gr.addChild(this.mc);
+   
     }
 
-    private textField:egret.TextField;
-
-    private createView():void {
-        this.textField = new egret.TextField();
-        this.addChild(this.textField);
-        this.textField.y = 300;
-        this.textField.width = 480;
-        this.textField.height = 100;
-        this.textField.textAlign = "center";
+    public playAni():void{
+        this.mc.play();
     }
 
-    public setProgress(current:number, total:number):void {
-        this.textField.text = `Loading...${current}/${total}`;
+    public stopAni():void{
+        this.mc.gotoAndStop(1);
+    }
+    public setProgress(current: number, total: number): void {
+        // this.textField.text = `Loading...${current}/${total}`;
     }
 }
