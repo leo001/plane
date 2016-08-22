@@ -39,7 +39,7 @@ class GlobalTimer {
 
 	public onTick():void{
 		var observer:IObserver;
-		for(var i = 0, len = this.observers.length; i < len; i++){
+		for(var len = this.observers.length, i = len - 1; i >= 0; i--){
 			observer = this.observers[i];
 			observer.tick();
 		}
