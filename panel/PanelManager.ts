@@ -1,61 +1,61 @@
-class PanelManager {
-	private static instance: PanelManager;
-    public static get inst(): PanelManager {
-        if (!this.instance) {
-            this.instance = new PanelManager();
-        }
 
-        return this.instance;
-    }
-	private panelCls: any;
-	private panelInst: any;
 
-	private block: egret.Shape;
-
-	public constructor() {
-		this.panelCls = {};
-		this.panelInst = {};
-
-		this.panelCls[PanelName.HELP] = HelpPanel;
-		
-
-		this.block = BlockFactory.getBlock();
-	}
-
-	public open(pn: string, info?: any): void {
-		var inst = this.panelInst[pn];
-		if (inst) {
-			if (0 == Lyrs.inst.PANEL.numChildren) {
-				Lyrs.inst.PANEL.addChild(this.block);
-			}
-		} else {
-			var cls = this.panelCls[pn];
-			if (cls) {
-				inst = new cls(info);
-			} else {
-				egret.log('不存在的面板类')
-			}
-		}
-		if (Lyrs.inst.PANEL.numChildren >= 2) {
-			this.swapLast();
-		}
-		Lyrs.inst.PANEL.addChild(inst);
-	}
-
+/**
+ * 具有 close() 函数
+ */
+class ClosePanel extends eui.Component {
+	/**
+	 * 在PanelLayer中addChild，这个字段会被赋值
+	 * 或者自己将close方法赋值到这个字段
+	 */
 	public close(): void {
-		Lyrs.inst.PANEL.removeChildAt(Lyrs.inst.PANEL.numChildren - 1);
-		if (Lyrs.inst.PANEL.numChildren >= 2) {
-			this.swapLast();
-		}else{
-			Lyrs.inst.PANEL.removeChildAt(Lyrs.inst.PANEL.numChildren - 1);
-		}
+	}
+}
+
+class PanelLayer extends eui.UILayer {
+
+	/**
+	 * 添加面板,会将关闭方法赋值到child.close
+	 * @param needMask true = 半透明遮罩 false = 透明遮罩（默认true）
+	 */
+	public addChild(child: ClosePanel, needMask?: boolean): egret.DisplayObject {
+		child.verticalCenter = 0;
+		child.horizontalCenter = 0;
+
+		let hasMask = needMask || needMask == undefined;
+		let alpha = hasMask ? 0.5 : 0;
+		let mask = this.getMask(alpha);
+
+		let oldCloseFunc = child.close;
+        let closeFunc = () => {
+            if (oldCloseFunc) {
+                oldCloseFunc();
+            }
+            super.removeChild(child);
+            super.removeChild(mask);
+        };
+        child.close = closeFunc;
+
+        mask.addEventListener(egret.TouchEvent.TOUCH_TAP, () => {
+            closeFunc();
+        }, this);
+
+		super.addChild(mask);
+        super.addChild(child);
+		return child;
 	}
 
-	public swapLast():void{
-		Lyrs.inst.PANEL.swapChildrenAt(Lyrs.inst.PANEL.numChildren - 2, Lyrs.inst.PANEL.numChildren - 1);
+	public closeAll() {
+		this.removeChildren();
 	}
 
-	public closeAll(): void {
-		Lyrs.inst.PANEL.removeChildren();
+	private getMask(fillAlpha: number) {
+		let rect = new eui.Rect();
+		rect.touchEnabled = true;
+        rect.percentWidth = 100;
+        rect.percentHeight = 100;
+        rect.fillColor = 0x0;
+        rect.fillAlpha = fillAlpha;
+		return rect;
 	}
 }
