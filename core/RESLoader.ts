@@ -1,62 +1,70 @@
 class RESLoader extends egret.EventDispatcher {
-	private static instance: RESLoader;
-    public static get inst(): RESLoader {
-        if (!this.instance) {
-            this.instance = new RESLoader();
-        }
 
-        return this.instance;
-    }
 
 	private info: any;
 
 	private loadingUI: LoadingUI;
 
-	public constructor() {
+	private loadedGroupNum: number;
+
+	private curSN: string;
+
+	public constructor(param: any) {
 		super();
 
-		this.info = {};
-		this.info['preload'] = { isLoading: 0, isLoaded: 0, priority: 4 };
-		this.info['start'] = { isLoading: 0, isLoaded: 0, priority: 3 };
-		this.info['game'] = { isLoading: 0, isLoaded: 0, priority: 2 };
-		this.info['end'] = { isLoading: 0, isLoaded: 0, priority: 1 };
+		this.info = param;
+
 
 		RES.addEventListener(RES.ResourceEvent.GROUP_COMPLETE, this.onResourceLoadComplete, this);
 		RES.addEventListener(RES.ResourceEvent.GROUP_LOAD_ERROR, this.onResourceLoadError, this);
 		RES.addEventListener(RES.ResourceEvent.GROUP_PROGRESS, this.onResourceProgress, this);
 		RES.addEventListener(RES.ResourceEvent.ITEM_LOAD_ERROR, this.onItemLoadError, this);
 
-		this.loadingUI = new LoadingUI();
+
 	}
 
-	//gn--group name
-	public load(gn: string, isShowLoading: boolean): void {
-		if (this.isLoaded(gn)) {
-			this.dispatchEventWith(MyEvent.RES_LOADED + gn);
+	public load(sn: string, isShowLoading: boolean): void {
+		if (RES.isGroupLoaded(sn)) {
+			this.dispatchEventWith(CoreEvent.RES_LOADED + sn);
 		} else {
-			if (!this.isLoading(gn)) {
+			if (!this.isLoading(sn)) {
 				if (isShowLoading) {
 					this.addLoadingUI();
 				}
-				var priority = this.getPriority(gn);
-				RES.loadGroup(gn, priority);
-				this.setIsLoading(gn, 1);
+				this.curSN = sn;
+				this.loadedGroupNum = 0;
+				this.setIsLoading(sn, 1);
 
+				var groups = this.getGroups(sn);
+				groups.forEach(element => {
+					RES.loadGroup(element);
+				});
 			}
 		}
 	}
 
-	public getPriority(gn: string): number {
-		return this.info[gn].priority;
+	public unload(sn: string): void {
+		var b = RES.destroyRes(sn);
+		if (b) {
+		} else {
+			egret.log('destory group failed');
+		}
+	}
+
+	private getGroups(sn: string): string[] {
+		return this.info[sn].groups;
 	}
 	private addLoadingUI(): void {
-		Lyrs.inst.LOADING.addChild(this.loadingUI);
+		if (!this.loadingUI) {
+			this.loadingUI = new LoadingUI();
+		}
+		CoreCollection.lyrs.LOADING.addChild(this.loadingUI);
 		this.loadingUI.playAni();
 	}
 
 	private removeLoadingUI(): void {
-		if (this.loadingUI.parent) {
-			Lyrs.inst.LOADING.removeChild(this.loadingUI);
+		if (this.loadingUI && this.loadingUI.parent) {
+			this.loadingUI.parent.removeChild(this.loadingUI);
 			this.loadingUI.stopAni();
 		}
 	}
@@ -64,11 +72,16 @@ class RESLoader extends egret.EventDispatcher {
 	private onResourceLoadComplete(event: RES.ResourceEvent): void {
 		console.log(event.groupName + " is loaded");
 
-		this.removeLoadingUI();
-		this.setIsLoading(event.groupName, 0);
-		this.setIsLoaded(event.groupName, 1);
-       	this.dispatchEventWith(MyEvent.RES_LOADED + event.groupName);
+		this.loadedGroupNum++;
+		if (this.loadedGroupNum == this.getGroupNum()) {
+			this.removeLoadingUI();
+			this.setIsLoading(this.curSN, 0);
+			this.dispatchEventWith(CoreEvent.RES_LOADED + this.curSN);
+		}
     }
+	private getGroupNum(): number {
+		return this.info[this.curSN].groups.length;
+	}
 	/**
 	* 资源组加载出错
 	*  The resource group loading failed
@@ -81,7 +94,7 @@ class RESLoader extends egret.EventDispatcher {
      * Resource group loading failed
      */
     private onResourceLoadError(event: RES.ResourceEvent): void {
-        console.warn("Group:" + event.groupName + " has failed to load");
+        console.warn("sn:" + this.curSN + " Group:" + event.groupName + " has failed to load");
         this.onResourceLoadComplete(event);
     }
     /**
@@ -93,19 +106,12 @@ class RESLoader extends egret.EventDispatcher {
 
     }
 
-	public isLoaded(gn: string): boolean {
-		return (1 == this.info[gn].isLoaded) ? true : false;
+	public isLoading(sn: string): boolean {
+		return (1 == this.info[sn].isLoading) ? true : false;
 	}
 
-	public isLoading(gn: string): boolean {
-		return (1 == this.info[gn].isLoading) ? true : false;
+	private setIsLoading(sn: string, v: number): void {
+		this.info[sn].isLoading = v;
 	}
 
-	private setIsLoading(gn: string, v: number): void {
-		this.info[gn].isLoading = v;
-	}
-
-	private setIsLoaded(gn: string, v: number): void {
-		this.info[gn].isLoaded = v;
-	}
 }
