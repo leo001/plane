@@ -1,4 +1,4 @@
-interface IPanel {
+interface IPanelManager {
 	
 	open(pn: string, info?: any): void;
 
