@@ -1,0 +1,62 @@
+class PanelManager implements IPanelManager{
+	
+	private panelCls: any;
+	private panelInst: any;
+
+	private plane: egret.Shape;
+
+	public constructor(param:any) {
+		this.panelCls = param;
+		this.panelInst = {};
+
+
+		this.plane = PlaneFactory.getPlane();
+		// this.plane.addEventListener(egret.TouchEvent.TOUCH_TAP, this.close, this);
+	}
+
+	
+
+	public open(pn: string, info?: any): void {
+		if (0 == CoreCollection.lyrs.PANEL.numChildren) {
+				CoreCollection.lyrs.PANEL.addChild(this.plane);
+		}
+		var inst:BasePanel = this.panelInst[pn];
+		if (!inst) {			
+			var cls = this.panelCls[pn];
+			if (cls) {
+				inst = new cls();
+				this.panelInst[pn] = inst;
+			} else {
+				egret.log('不存在的面板类');
+				return;
+			}
+		}
+		inst.init(info);
+		
+		if (CoreCollection.lyrs.PANEL.numChildren >= 2) {
+			this.swapLast();
+		}
+		CoreCollection.lyrs.PANEL.addChild(inst);
+		inst.horizontalCenter = inst.verticalCenter = 0;
+	}
+
+	/**
+	 * 关闭当前窗口
+	 */
+	public close(): void {
+		CoreCollection.lyrs.PANEL.removeChildAt(CoreCollection.lyrs.PANEL.numChildren - 1);
+		if (CoreCollection.lyrs.PANEL.numChildren >= 2) {
+			this.swapLast();
+		} else {
+			CoreCollection.lyrs.PANEL.removeChildAt(CoreCollection.lyrs.PANEL.numChildren - 1);
+		}
+	}
+
+	private swapLast(): void {
+		CoreCollection.lyrs.PANEL.swapChildrenAt(CoreCollection.lyrs.PANEL.numChildren - 2, CoreCollection.lyrs.PANEL.numChildren - 1);
+	}
+
+	public closeAll(): void {
+		CoreCollection.lyrs.PANEL.removeChildren();
+	}
+}
